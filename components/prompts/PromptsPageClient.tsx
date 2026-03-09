@@ -9,7 +9,7 @@ import { PromptGrid } from "@/components/prompts/PromptGrid";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { usePrompts } from "@/hooks/usePrompts";
+import { useCategories, usePrompts } from "@/hooks/usePrompts";
 import { useUiStore } from "@/store/ui";
 
 export function PromptsPageClient() {
@@ -30,9 +30,33 @@ export function PromptsPageClient() {
     [params]
   );
   const { data, isLoading } = usePrompts(queryParams);
+  const { data: categories = [] } = useCategories();
 
   const prompts = data?.data ?? [];
   const total = data?.total ?? 0;
+  const selectedCategory = params.get("category") ?? undefined;
+  const categoryNames = useMemo(() => {
+    const names = categories.map((category) => category.name).filter(Boolean);
+
+    if (selectedCategory && !names.includes(selectedCategory)) {
+      names.push(selectedCategory);
+    }
+
+    return [...new Set(names)].sort((left, right) => left.localeCompare(right));
+  }, [categories, selectedCategory]);
+
+  function updateCategory(category?: string) {
+    const nextParams = new URLSearchParams(params.toString());
+
+    if (category) {
+      nextParams.set("category", category);
+    } else {
+      nextParams.delete("category");
+    }
+
+    nextParams.delete("page");
+    router.push(nextParams.size ? `/prompts?${nextParams.toString()}` : "/prompts");
+  }
 
   return (
     <div className="space-y-6">
@@ -59,12 +83,19 @@ export function PromptsPageClient() {
 
       <Card>
         <CardContent className="flex flex-wrap gap-2 p-4">
-          {["Marketing", "Coding", "Research", "Writing"].map((category) => (
+          <Button
+            variant={selectedCategory ? "secondary" : "default"}
+            size="sm"
+            onClick={() => updateCategory()}
+          >
+            All
+          </Button>
+          {categoryNames.map((category) => (
             <Button
               key={category}
-              variant={params.get("category") === category ? "default" : "secondary"}
+              variant={selectedCategory === category ? "default" : "secondary"}
               size="sm"
-              onClick={() => router.push(`/prompts?category=${category}`)}
+              onClick={() => updateCategory(category)}
             >
               {category}
             </Button>

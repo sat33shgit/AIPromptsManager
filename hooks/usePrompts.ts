@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { PaginatedPrompts, Prompt } from "@/types";
+import type { Category, PaginatedPrompts, Prompt } from "@/types";
 
 type QueryParams = Record<string, string | number | undefined>;
 
@@ -24,6 +24,19 @@ export function usePrompts(params?: QueryParams) {
       const response = await fetch(`/api/prompts?${buildQuery(params)}`);
       if (!response.ok) {
         throw new Error("Failed to fetch prompts");
+      }
+      return response.json();
+    }
+  });
+}
+
+export function useCategories() {
+  return useQuery<Category[]>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await fetch("/api/categories");
+      if (!response.ok) {
+        throw new Error("Failed to fetch categories");
       }
       return response.json();
     }

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${body.variable} ${display.variable} transition-colors duration-200`}>
+      <body suppressHydrationWarning className={`${body.variable} ${display.variable} transition-colors duration-200`}>
         <Providers>
           <a
             href="#main-content"
