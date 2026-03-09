@@ -1,7 +1,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-const connectionString = process.env.DATABASE_URL;
+import { getRuntimeDatabaseUrl } from "@/lib/db/connection-string";
+
+const connectionString = getRuntimeDatabaseUrl();
 
 export const db =
   connectionString
