@@ -38,7 +38,7 @@ export default async function HomePage() {
                 your workspace into a spreadsheet.
               </p>
             </div>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="whitespace-nowrap">
               <Link href="/prompts/new">
                 Start a new prompt
                 <ArrowRight className="h-4 w-4" />

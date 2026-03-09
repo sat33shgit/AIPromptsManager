@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { MoonStar, Plus, Search, SunMedium } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Suspense } from "react";
 
-import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
+  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
@@ -22,13 +22,15 @@ export function Header() {
           </div>
         </Link>
 
-        <div className="hidden flex-1 md:block">
-          <Suspense fallback={<div className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)]" />}>
-            <SearchBar />
-          </Suspense>
-        </div>
-
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Search prompts"
+            onClick={() => router.push("/prompts?focus=search")}
+          >
+            <Search className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -36,9 +38,6 @@ export function Header() {
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
             {resolvedTheme === "dark" ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
-          </Button>
-          <Button variant="ghost" size="sm" className="md:hidden" aria-label="Search prompts">
-            <Search className="h-4 w-4" />
           </Button>
           <Button asChild>
             <Link href="/prompts/new">
