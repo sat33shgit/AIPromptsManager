@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils/cn";
 import { estimateTokens } from "@/lib/utils/format";
 import { promptSchema } from "@/lib/validations/prompt";
 import type { Category, Prompt } from "@/types";
@@ -36,6 +37,7 @@ function extractVariables(content: string) {
 export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; categories: Category[] }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const storageKey = prompt ? `promptvault-edit-${prompt.id}` : "promptvault-draft-new";
 
@@ -63,6 +65,11 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
   const variables = useFieldArray({ control: form.control, name: "variables" });
   const attachments = form.watch("attachments");
   const content = form.watch("content");
+  const selectedCategory = form.watch("category");
+  const knownCategories = useMemo(
+    () => [...new Set(categories.map((category) => category.name).filter(Boolean))].sort((left, right) => left.localeCompare(right)),
+    [categories]
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
@@ -97,25 +104,30 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
   }, [content, form, variables]);
 
   const onSubmit = useCallback(async (values: FormValues) => {
-    const response = await fetch(prompt ? `/api/prompts/${prompt.id}` : "/api/prompts", {
-      method: prompt ? "PUT" : "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(values)
-    });
+    setSaving(true);
+    try {
+      const response = await fetch(prompt ? `/api/prompts/${prompt.id}` : "/api/prompts", {
+        method: prompt ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(values)
+      });
 
-    if (!response.ok) {
-      toast.error("Failed to save prompt");
-      return;
+      if (!response.ok) {
+        toast.error("Failed to save prompt");
+        return;
+      }
+
+      const saved = await response.json();
+      localStorage.removeItem(storageKey);
+      setDirty(false);
+      toast.success(prompt ? "Prompt updated" : "Prompt created");
+      router.push(`/prompts/${saved.id}`);
+      router.refresh();
+    } finally {
+      setSaving(false);
     }
-
-    const saved = await response.json();
-    localStorage.removeItem(storageKey);
-    setDirty(false);
-    toast.success(prompt ? "Prompt updated" : "Prompt created");
-    router.push(`/prompts/${saved.id}`);
-    router.refresh();
   }, [prompt, router, storageKey]);
 
   const submitForm = useCallback(() => {
@@ -186,12 +198,10 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-4xl">{prompt ? "Edit prompt" : "Create prompt"}</h1>
-          <p className="text-sm text-[var(--text-secondary)]">{dirty ? "Unsaved changes" : "All changes saved"}</p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {saving ? "Saving prompt..." : dirty ? "Unsaved changes" : "All changes saved"}
+          </p>
         </div>
-        <Button type="submit">
-          <Save className="h-4 w-4" />
-          Save prompt
-        </Button>
       </div>
 
       <Card>
@@ -210,12 +220,29 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Input id="category" list="categories" {...form.register("category")} />
-            <datalist id="categories">
-              {categories.map((category) => (
-                <option key={category.id} value={category.name} />
+            <select
+              id="category"
+              className={cn(
+                "focus-ring h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm"
+              )}
+              {...form.register("category")}
+            >
+              <option value="">Select a category</option>
+              {knownCategories.map((categoryName) => (
+                <option key={categoryName} value={categoryName}>
+                  {categoryName}
+                </option>
               ))}
-            </datalist>
+              {selectedCategory && !knownCategories.includes(selectedCategory) ? (
+                <option value={selectedCategory}>{selectedCategory}</option>
+              ) : null}
+            </select>
+            <Input
+              value={selectedCategory ?? ""}
+              placeholder="Or type a new category"
+              onChange={(event) => form.setValue("category", event.target.value, { shouldDirty: true })}
+            />
+            <p className="text-xs text-[var(--text-muted)]">Select an existing category above or type a new one here.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
@@ -336,6 +363,13 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
           </label>
         </CardContent>
       </Card>
+
+      <div className="sticky bottom-4 z-20 flex justify-end">
+        <Button type="submit" disabled={saving} size="lg" className="shadow-lg">
+          {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? "Saving..." : "Save prompt"}
+        </Button>
+      </div>
     </form>
   );
 }

@@ -11,6 +11,61 @@ const state = {
   categories: [...sampleCategories]
 };
 
+const fallbackCategoryColors = ["#2563EB", "#16A34A", "#D97706", "#DC2626", "#0891B2", "#7C3AED"];
+
+function normalizeCategoryName(name?: string | null) {
+  return name?.trim() ?? "";
+}
+
+function pickCategoryColor(name: string) {
+  const hash = Array.from(name).reduce((total, char) => total + char.charCodeAt(0), 0);
+  return fallbackCategoryColors[hash % fallbackCategoryColors.length];
+}
+
+async function ensureCategoryExists(name?: string | null) {
+  const normalizedName = normalizeCategoryName(name);
+  if (!normalizedName) {
+    return null;
+  }
+
+  if (db) {
+    const existingRows = await db.select().from(categoriesTable).where(eq(categoriesTable.name, normalizedName)).limit(1);
+    const existing = existingRows[0];
+    if (existing) {
+      return existing;
+    }
+
+    const inserted = (
+      await db
+        .insert(categoriesTable)
+        .values({
+          id: crypto.randomUUID(),
+          name: normalizedName,
+          color: pickCategoryColor(normalizedName),
+          icon: ""
+        })
+        .returning()
+    )[0];
+
+    return inserted ?? null;
+  }
+
+  const existing = state.categories.find((category) => category.name === normalizedName);
+  if (existing) {
+    return existing;
+  }
+
+  const category: Category = {
+    id: crypto.randomUUID(),
+    name: normalizedName,
+    color: pickCategoryColor(normalizedName),
+    icon: "",
+    createdAt: new Date().toISOString()
+  };
+  state.categories.push(category);
+  return category;
+}
+
 function sortPrompts(items: Prompt[], sort: PromptFilters["sort"] = "updated_at", order: PromptFilters["order"] = "desc") {
   const direction = order === "asc" ? 1 : -1;
   return [...items].sort((a, b) => {
@@ -163,8 +218,12 @@ export async function getPromptByShareToken(token: string) {
 }
 
 export async function createPrompt(input: Omit<Prompt, "id" | "createdAt" | "updatedAt" | "useCount" | "shareToken"> & Partial<Pick<Prompt, "shareToken">>) {
+  const categoryName = normalizeCategoryName(input.category);
+  await ensureCategoryExists(categoryName);
+
   const prompt: Prompt = {
     ...input,
+    category: categoryName,
     id: crypto.randomUUID(),
     useCount: 0,
     shareToken: input.shareToken ?? crypto.randomUUID(),
@@ -200,9 +259,16 @@ export async function updatePrompt(id: string, input: Partial<Prompt>) {
     return null;
   }
 
+  const categoryName = Object.prototype.hasOwnProperty.call(input, "category")
+    ? normalizeCategoryName(input.category)
+    : normalizeCategoryName(existing.category);
+
+  await ensureCategoryExists(categoryName);
+
   const updated: Prompt = {
     ...existing,
     ...input,
+    category: categoryName,
     id,
     updatedAt: new Date().toISOString()
   };
@@ -256,27 +322,67 @@ export async function incrementPromptUse(id: string) {
 
 export async function listCategories(): Promise<Category[]> {
   if (db) {
-    const rows = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
-    return rows.map((row) => ({
+    const [rows, promptRows] = await Promise.all([
+      db.select().from(categoriesTable).orderBy(categoriesTable.name),
+      db.select({ category: promptsTable.category }).from(promptsTable)
+    ]);
+
+    const categories = rows.map((row) => ({
       id: row.id,
       name: row.name,
       color: row.color ?? "",
       icon: row.icon ?? "",
       createdAt: row.createdAt.toISOString()
     }));
+
+    const existingNames = new Set(categories.map((category) => category.name));
+    const missingNames = [...new Set(promptRows.map((row) => normalizeCategoryName(row.category)).filter(Boolean))].filter(
+      (name) => !existingNames.has(name)
+    );
+
+    if (!missingNames.length) {
+      return categories;
+    }
+
+    const insertedCategories = await Promise.all(missingNames.map((name) => ensureCategoryExists(name)));
+    return [...categories, ...insertedCategories]
+      .filter((category): category is NonNullable<typeof category> => Boolean(category))
+      .map((category) => ({
+        id: category.id,
+        name: category.name,
+        color: category.color ?? "",
+        icon: category.icon ?? "",
+        createdAt: category.createdAt instanceof Date ? category.createdAt.toISOString() : category.createdAt
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name));
   }
 
   return state.categories;
 }
 
 export async function createCategory(input: Omit<Category, "id" | "createdAt">) {
+  const normalizedName = normalizeCategoryName(input.name);
   const category: Category = {
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
-    ...input
+    ...input,
+    name: normalizedName,
+    color: input.color || pickCategoryColor(normalizedName)
   };
 
   if (db) {
+    const existingRows = await db.select().from(categoriesTable).where(eq(categoriesTable.name, normalizedName)).limit(1);
+    const existing = existingRows[0];
+    if (existing) {
+      return {
+        id: existing.id,
+        name: existing.name,
+        color: existing.color ?? "",
+        icon: existing.icon ?? "",
+        createdAt: existing.createdAt.toISOString()
+      };
+    }
+
     await db.insert(categoriesTable).values({
       id: category.id,
       name: category.name,
@@ -284,7 +390,9 @@ export async function createCategory(input: Omit<Category, "id" | "createdAt">) 
       icon: category.icon
     });
   } else {
-    state.categories.push(category);
+    if (!state.categories.some((existing) => existing.name === normalizedName)) {
+      state.categories.push(category);
+    }
   }
 
   return category;
