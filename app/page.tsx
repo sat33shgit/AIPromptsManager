@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardStats, listCategories, listPrompts } from "@/lib/data/repository";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [stats, categories, promptPage] = await Promise.all([
     getDashboardStats(),
