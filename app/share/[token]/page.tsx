@@ -28,7 +28,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           <div className="flex flex-wrap gap-3">
             <CopyButton promptId={prompt.id} content={prompt.content} />
             <Link href="/" className="inline-flex items-center rounded-lg border border-[var(--border)] px-4 py-2 text-sm">
-              Create your own on Prompts Manager
+              Create your own on AI Prompts Manager
             </Link>
           </div>
         </CardContent>

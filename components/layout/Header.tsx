@@ -17,7 +17,7 @@ export function Header() {
         <Link href="/" className="focus-ring flex items-center gap-3 rounded-lg">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-md">PM</span>
           <div className="hidden sm:block">
-            <p className="font-display text-xl leading-none">Prompts Manager</p>
+            <p className="font-display text-xl leading-none">AI Prompts Manager</p>
             <p className="text-xs text-[var(--text-secondary)]">Built for AI creators</p>
           </div>
         </Link>

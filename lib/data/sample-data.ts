@@ -19,7 +19,7 @@ export const samplePrompts: Prompt[] = [
     tags: ["launch", "email", "ads"],
     model: "GPT-4o",
     variables: [
-      { name: "product_name", description: "Name of the product", defaultValue: "Prompts Manager Pro" },
+      { name: "product_name", description: "Name of the product", defaultValue: "AI Prompts Manager Pro" },
       { name: "audience", description: "Primary customer segment", defaultValue: "AI consultants" }
     ],
     attachments: [],
