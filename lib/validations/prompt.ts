@@ -43,18 +43,3 @@ export const promptQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20)
 });
-
-export const uploadSchema = z.object({
-  promptId: z.string().min(1),
-  filename: z.string().min(1),
-  contentType: z.enum([
-    "image/png",
-    "image/jpeg",
-    "image/webp",
-    "text/plain",
-    "text/markdown",
-    "application/json",
-    "application/pdf"
-  ]),
-  size: z.number().min(1).max(10 * 1024 * 1024)
-});

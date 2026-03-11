@@ -19,7 +19,8 @@ function buildQuery(params?: QueryParams) {
 export function usePrompts(params?: QueryParams) {
   return useQuery<PaginatedPrompts>({
     queryKey: ["prompts", params],
-    staleTime: 60_000,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const response = await fetch(`/api/prompts?${buildQuery(params)}`);
       if (!response.ok) {
@@ -33,6 +34,8 @@ export function usePrompts(params?: QueryParams) {
 export function useCategories() {
   return useQuery<Category[]>({
     queryKey: ["categories"],
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const response = await fetch("/api/categories");
       if (!response.ok) {
@@ -48,6 +51,7 @@ export function usePrompt(id?: string) {
     queryKey: ["prompt", id],
     enabled: Boolean(id),
     staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const response = await fetch(`/api/prompts/${id}`);
       if (!response.ok) {
@@ -73,13 +77,16 @@ export function usePromptMutation(id?: string) {
       if (!response.ok) {
         throw new Error("Failed to save prompt");
       }
-      return response.json();
+      return response.json() as Promise<Prompt>;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+    onSuccess: (data) => {
+      // Optimistically update the prompt cache with the fresh data
       if (id) {
-        queryClient.invalidateQueries({ queryKey: ["prompt", id] });
+        queryClient.setQueryData(["prompt", id], data);
       }
+      // Invalidate the list to pick up changes
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     }
   });
 }

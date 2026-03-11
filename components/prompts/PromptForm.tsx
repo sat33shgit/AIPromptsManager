@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, Plus, Save, Trash2, Upload } from "lucide-react";
+import { ExternalLink, LoaderCircle, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,8 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const storageKey = prompt ? `promptvault-edit-${prompt.id}` : "promptvault-draft-new";
+  const [dragging, setDragging] = useState(false);
+  const storageKey = prompt ? `prompts-manager-edit-${prompt.id}` : "prompts-manager-draft-new";
 
   const defaultValues = useMemo<FormValues>(
     () => ({
@@ -159,35 +160,34 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
     try {
       const next = [...attachments];
       for (const file of Array.from(files)) {
-        const presign = await fetch("/api/upload/presign", {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("promptId", prompt?.id ?? "draft");
+
+        const response = await fetch("/api/upload", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            promptId: prompt?.id ?? "draft",
-            filename: file.name,
-            contentType: file.type || "text/plain",
-            size: file.size
-          })
+          body: formData
         });
-        const payload = await presign.json();
-        if (payload.uploadUrl) {
-          await fetch(payload.uploadUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": file.type
-            },
-            body: file
-          });
+
+        if (!response.ok) {
+          const error = await response.json();
+          toast.error(error.message ?? "Failed to upload file");
+          continue;
         }
+
+        const payload = await response.json();
         next.push({
           key: payload.key,
-          name: file.name,
-          url: payload.publicUrl,
-          size: file.size,
-          type: file.type
+          name: payload.name,
+          url: payload.url,
+          size: payload.size,
+          type: payload.type
         });
+        toast.success(`Uploaded ${file.name}`);
       }
       form.setValue("attachments", next, { shouldDirty: true });
+    } catch {
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -314,31 +314,50 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
           <h2 className="font-semibold">Attachments</h2>
         </CardHeader>
         <CardContent className="space-y-4">
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-8 text-center">
-            {uploading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-            <div>
-              <p className="font-medium">Drag files here or click to browse</p>
-              <p className="text-xs text-[var(--text-secondary)]">PNG, JPG, WEBP, TXT, MD, JSON, PDF up to 10MB.</p>
-            </div>
-            <input className="hidden" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.txt,.md,.json,.pdf" onChange={(event) => void uploadFiles(event.target.files)} />
-          </label>
+          <div
+            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragging(true); }}
+            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragging(false); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragging(false);
+              void uploadFiles(e.dataTransfer.files);
+            }}
+          >
+            <label className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+              dragging
+                ? "border-[var(--accent)] bg-[var(--accent-subtle)]"
+                : "border-[var(--border)] bg-[var(--surface-elevated)]"
+            }`}>
+              {uploading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+              <div>
+                <p className="font-medium">{dragging ? "Drop files to upload" : "Drag files here or click to browse"}</p>
+                <p className="text-xs text-[var(--text-secondary)]">PNG, JPG, WEBP, TXT, MD, JSON, PDF up to 10MB.</p>
+              </div>
+              <input className="hidden" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.txt,.md,.json,.pdf" onChange={(event) => void uploadFiles(event.target.files)} />
+            </label>
+          </div>
           <div className="space-y-2">
             {attachments.map((attachment, index) => (
               <div key={attachment.key} className="flex items-center justify-between rounded-xl bg-[var(--surface-elevated)] px-3 py-2 text-sm">
-                <a href={attachment.url} className="truncate text-[var(--accent)]">
+                <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 truncate text-[var(--accent)]">
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                   {attachment.name}
                 </a>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
+                  onClick={async () => {
+                    await fetch(`/api/upload/${encodeURIComponent(attachment.key)}`, { method: "DELETE" });
                     form.setValue(
                       "attachments",
                       attachments.filter((_, itemIndex) => itemIndex !== index),
                       { shouldDirty: true }
-                    )
-                  }
+                    );
+                    toast.success(`Removed ${attachment.name}`);
+                  }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

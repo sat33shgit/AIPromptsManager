@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const prompts = pgTable("prompts", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -15,7 +15,13 @@ export const prompts = pgTable("prompts", {
   useCount: integer("use_count").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
+}, (table) => [
+  index("idx_prompts_updated_at").on(table.updatedAt),
+  index("idx_prompts_category").on(table.category),
+  index("idx_prompts_share_token").on(table.shareToken),
+  index("idx_prompts_use_count").on(table.useCount),
+  index("idx_prompts_is_public").on(table.isPublic)
+]);
 
 export const categories = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),

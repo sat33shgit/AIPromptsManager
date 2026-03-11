@@ -1,0 +1,29 @@
+9th March 2026
+---------------
+1. AI Prompts Manager web app with add, edit, delete prompts
+
+
+10th March
+----------
+2. Added Clouflare R2 storage functionality
+
+
+
+
+
+
+
+1. Manage Categories
+2. Rename 'PromptVault' to 'Prompts Manager'
+3. 
+
+
+Check all the changes done, cleanup the code, remove debug code, remove unused code or files and optimize the code
+	
+
+git rev-parse --abbrev-ref HEAD  -- get current branch
+git branch -a --no-color  - get all branches
+git branch -D 404new  -- delete a branch, local
+git push origin --delete 404new - delete a branch, remote
+git checkout -b allnewfixes   -- create new branch from master
+git checkout allnewfixes; git rev-parse --abbrev-ref HEAD  ==  switch to a branch

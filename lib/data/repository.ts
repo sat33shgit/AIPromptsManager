@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { categories as categoriesTable, prompts as promptsTable } from "@/lib/db/schema";
@@ -66,6 +66,39 @@ async function ensureCategoryExists(name?: string | null) {
   return category;
 }
 
+function mapRow(row: typeof promptsTable.$inferSelect): Prompt {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? "",
+    content: row.content,
+    category: row.category ?? "",
+    tags: row.tags,
+    model: row.model ?? "",
+    variables: row.variables,
+    attachments: row.attachments,
+    isPublic: row.isPublic,
+    shareToken: row.shareToken,
+    useCount: row.useCount,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString()
+  };
+}
+
+// Determine the SQL order-by column
+function getSortColumn(sort: PromptFilters["sort"]) {
+  switch (sort) {
+    case "title":
+      return promptsTable.title;
+    case "use_count":
+      return promptsTable.useCount;
+    case "created_at":
+      return promptsTable.createdAt;
+    default:
+      return promptsTable.updatedAt;
+  }
+}
+
 function sortPrompts(items: Prompt[], sort: PromptFilters["sort"] = "updated_at", order: PromptFilters["order"] = "desc") {
   const direction = order === "asc" ? 1 : -1;
   return [...items].sort((a, b) => {
@@ -98,24 +131,52 @@ function sortPrompts(items: Prompt[], sort: PromptFilters["sort"] = "updated_at"
 
 export async function listPrompts(filters: PromptFilters = {}): Promise<PaginatedPrompts> {
   if (db) {
-    const rows = await db.select().from(promptsTable).orderBy(desc(promptsTable.updatedAt));
-    const prompts = rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      description: row.description ?? "",
-      content: row.content,
-      category: row.category ?? "",
-      tags: row.tags,
-      model: row.model ?? "",
-      variables: row.variables,
-      attachments: row.attachments,
-      isPublic: row.isPublic,
-      shareToken: row.shareToken,
-      useCount: row.useCount,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString()
-    }));
-    return paginatePrompts(prompts, filters);
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
+    const offset = (page - 1) * limit;
+    const sortCol = getSortColumn(filters.sort);
+    const orderFn = filters.order === "asc" ? asc : desc;
+
+    // Build WHERE conditions
+    const conditions = [];
+    if (filters.category) {
+      conditions.push(eq(promptsTable.category, filters.category));
+    }
+    if (filters.model) {
+      conditions.push(eq(promptsTable.model, filters.model));
+    }
+    if (filters.q) {
+      // Use ilike for basic text search on title and description
+      const searchTerm = `%${filters.q}%`;
+      conditions.push(
+        sql`(${promptsTable.title} ILIKE ${searchTerm} OR ${promptsTable.description} ILIKE ${searchTerm} OR ${promptsTable.content} ILIKE ${searchTerm})`
+      );
+    }
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+
+    // Run count and data queries in parallel
+    const [countResult, rows] = await Promise.all([
+      db.select({ value: count() }).from(promptsTable).where(whereClause),
+      db
+        .select()
+        .from(promptsTable)
+        .where(whereClause)
+        .orderBy(orderFn(sortCol))
+        .limit(limit)
+        .offset(offset)
+    ]);
+
+    const total = countResult[0]?.value ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return {
+      data: rows.map(mapRow),
+      total,
+      page,
+      limit,
+      totalPages
+    };
   }
 
   return paginatePrompts(state.prompts, filters);
@@ -146,9 +207,9 @@ function paginatePrompts(source: Prompt[], filters: PromptFilters): PaginatedPro
 
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
-  const offset = (page - 1) * limit;
+  const start = (page - 1) * limit;
   return {
-    data: filtered.slice(offset, offset + limit),
+    data: filtered.slice(start, start + limit),
     total,
     page,
     limit,
@@ -160,24 +221,7 @@ export async function getPrompt(id: string) {
   if (db) {
     const rows = await db.select().from(promptsTable).where(eq(promptsTable.id, id)).limit(1);
     const row = rows[0];
-    return row
-      ? {
-          id: row.id,
-          title: row.title,
-          description: row.description ?? "",
-          content: row.content,
-          category: row.category ?? "",
-          tags: row.tags,
-          model: row.model ?? "",
-          variables: row.variables,
-          attachments: row.attachments,
-          isPublic: row.isPublic,
-          shareToken: row.shareToken,
-          useCount: row.useCount,
-          createdAt: row.createdAt.toISOString(),
-          updatedAt: row.updatedAt.toISOString()
-        }
-      : null;
+    return row ? mapRow(row) : null;
   }
   return state.prompts.find((prompt) => prompt.id === id) ?? null;
 }
@@ -188,30 +232,11 @@ export async function getPromptByShareToken(token: string) {
       await db
         .select()
         .from(promptsTable)
-        .where(sql`${promptsTable.shareToken} = ${token} and ${promptsTable.isPublic} = true`)
+        .where(and(eq(promptsTable.shareToken, token), eq(promptsTable.isPublic, true)))
         .limit(1)
     )[0];
 
-    if (!row) {
-      return null;
-    }
-
-    return {
-      id: row.id,
-      title: row.title,
-      description: row.description ?? "",
-      content: row.content,
-      category: row.category ?? "",
-      tags: row.tags,
-      model: row.model ?? "",
-      variables: row.variables,
-      attachments: row.attachments,
-      isPublic: row.isPublic,
-      shareToken: row.shareToken,
-      useCount: row.useCount,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString()
-    } satisfies Prompt;
+    return row ? mapRow(row) : null;
   }
 
   return state.prompts.find((entry) => entry.shareToken === token && entry.isPublic) ?? null;
@@ -313,6 +338,16 @@ export async function deletePrompt(id: string) {
 }
 
 export async function incrementPromptUse(id: string) {
+  if (db) {
+    // Single atomic SQL update instead of read-then-write
+    const rows = await db
+      .update(promptsTable)
+      .set({ useCount: sql`${promptsTable.useCount} + 1` })
+      .where(eq(promptsTable.id, id))
+      .returning();
+    return rows[0] ? mapRow(rows[0]) : null;
+  }
+
   const prompt = await getPrompt(id);
   if (!prompt) {
     return null;
@@ -322,39 +357,14 @@ export async function incrementPromptUse(id: string) {
 
 export async function listCategories(): Promise<Category[]> {
   if (db) {
-    const [rows, promptRows] = await Promise.all([
-      db.select().from(categoriesTable).orderBy(categoriesTable.name),
-      db.select({ category: promptsTable.category }).from(promptsTable)
-    ]);
-
-    const categories = rows.map((row) => ({
+    const rows = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
+    return rows.map((row) => ({
       id: row.id,
       name: row.name,
       color: row.color ?? "",
       icon: row.icon ?? "",
       createdAt: row.createdAt.toISOString()
     }));
-
-    const existingNames = new Set(categories.map((category) => category.name));
-    const missingNames = [...new Set(promptRows.map((row) => normalizeCategoryName(row.category)).filter(Boolean))].filter(
-      (name) => !existingNames.has(name)
-    );
-
-    if (!missingNames.length) {
-      return categories;
-    }
-
-    const insertedCategories = await Promise.all(missingNames.map((name) => ensureCategoryExists(name)));
-    return [...categories, ...insertedCategories]
-      .filter((category): category is NonNullable<typeof category> => Boolean(category))
-      .map((category) => ({
-        id: category.id,
-        name: category.name,
-        color: category.color ?? "",
-        icon: category.icon ?? "",
-        createdAt: category.createdAt instanceof Date ? category.createdAt.toISOString() : category.createdAt
-      }))
-      .sort((left, right) => left.name.localeCompare(right.name));
   }
 
   return state.categories;
@@ -418,18 +428,45 @@ export async function deleteCategory(id: string) {
 }
 
 export async function getDashboardStats() {
-  const prompts = (await listPrompts({ limit: 100 })).data;
-  const categories = await listCategories();
-  const totalPrompts = prompts.length;
-  const mostUsedPrompt = [...prompts].sort((a, b) => b.useCount - a.useCount)[0] ?? null;
-  const promptsThisWeek = prompts.filter((prompt) => Date.now() - new Date(prompt.createdAt).getTime() < 7 * 86400000).length;
+  if (db) {
+    // Run all dashboard queries in parallel with dedicated SQL
+    const [
+      totalResult,
+      categoryCount,
+      weekCount,
+      mostUsedRows,
+      recentRows,
+      popularRows
+    ] = await Promise.all([
+      db.select({ value: count() }).from(promptsTable),
+      db.select({ value: count() }).from(categoriesTable),
+      db.select({ value: count() }).from(promptsTable).where(
+        sql`${promptsTable.createdAt} > NOW() - INTERVAL '7 days'`
+      ),
+      db.select().from(promptsTable).orderBy(desc(promptsTable.useCount)).limit(1),
+      db.select().from(promptsTable).orderBy(desc(promptsTable.updatedAt)).limit(6),
+      db.select().from(promptsTable).orderBy(desc(promptsTable.useCount)).limit(4)
+    ]);
+
+    return {
+      totalPrompts: totalResult[0]?.value ?? 0,
+      totalCategories: categoryCount[0]?.value ?? 0,
+      mostUsedPrompt: mostUsedRows[0] ? mapRow(mostUsedRows[0]) : null,
+      promptsThisWeek: weekCount[0]?.value ?? 0,
+      recentPrompts: recentRows.map(mapRow),
+      popularPrompts: popularRows.map(mapRow)
+    };
+  }
+
+  // Fallback for in-memory mode
+  const prompts = state.prompts;
+  const categories = state.categories;
 
   return {
-    totalPrompts,
+    totalPrompts: prompts.length,
     totalCategories: categories.length,
-    mostUsedPrompt,
-    promptsThisWeek,
-    starredPrompts: prompts.filter((prompt) => prompt.starred).slice(0, 4),
+    mostUsedPrompt: [...prompts].sort((a, b) => b.useCount - a.useCount)[0] ?? null,
+    promptsThisWeek: prompts.filter((prompt) => Date.now() - new Date(prompt.createdAt).getTime() < 7 * 86400000).length,
     recentPrompts: [...prompts].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)).slice(0, 6),
     popularPrompts: [...prompts].sort((a, b) => b.useCount - a.useCount).slice(0, 4)
   };

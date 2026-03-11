@@ -15,9 +15,9 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/80 backdrop-blur-sm dark:bg-[rgba(18,18,16,0.8)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 md:h-16 md:px-6">
         <Link href="/" className="focus-ring flex items-center gap-3 rounded-lg">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-md">PV</span>
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-md">PM</span>
           <div className="hidden sm:block">
-            <p className="font-display text-xl leading-none">PromptVault</p>
+            <p className="font-display text-xl leading-none">Prompts Manager</p>
             <p className="text-xs text-[var(--text-secondary)]">Built for AI creators</p>
           </div>
         </Link>

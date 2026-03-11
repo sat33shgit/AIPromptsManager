@@ -1,0 +1,42 @@
+On branch master
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .env.example
+	modified:   app/api/prompts/[id]/route.ts
+	modified:   app/api/upload/[key]/route.ts
+	deleted:    app/api/upload/presign/route.ts
+	modified:   app/layout.tsx
+	modified:   app/page.tsx
+	modified:   app/share/[token]/page.tsx
+	modified:   components/layout/Footer.tsx
+	modified:   components/layout/Header.tsx
+	modified:   components/prompts/PromptCard.tsx
+	modified:   components/prompts/PromptDetail.tsx
+	modified:   components/prompts/PromptForm.tsx
+	deleted:    components/prompts/PromptList.tsx
+	deleted:    components/search/SearchResults.tsx
+	modified:   hooks/usePrompts.ts
+	modified:   lib/data/repository.ts
+	modified:   lib/data/sample-data.ts
+	modified:   lib/db/schema.ts
+	modified:   lib/r2/client.ts
+	modified:   lib/utils/search.ts
+	modified:   lib/validations/prompt.ts
+	modified:   next.config.mjs
+	modified:   package-lock.json
+	modified:   package.json
+	modified:   scripts/seed.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	AI Prompts Manager Requirements.txt
+	app/api/upload/route.ts
+	app/api/upload/serve/
+	check_status.bat
+	merge.bat
+	out.txt
+	out_status.txt
+	scripts/add_indexes.sql
+
+no changes added to commit (use "git add" and/or "git commit -a")

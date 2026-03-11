@@ -45,18 +45,3 @@ export function matchesPrompt(prompt: Prompt, query?: string) {
 
   return plain ? haystack.includes(plain) : true;
 }
-
-export function highlightText(text: string, query?: string) {
-  if (!query?.trim()) {
-    return [{ text, match: false }];
-  }
-
-  const token = query.replace(/(tag|model):[^\s]+/g, "").replace(/in:title\s+[^\s]+/g, "").replace(/"/g, "").trim();
-
-  if (!token) {
-    return [{ text, match: false }];
-  }
-
-  const regex = new RegExp(`(${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig");
-  return text.split(regex).filter(Boolean).map((part) => ({ text: part, match: regex.test(part) }));
-}

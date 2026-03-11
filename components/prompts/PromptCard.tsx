@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Link from "next/link";
 import { Pencil, Share2 } from "lucide-react";
 
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatNumber, formatRelativeDate } from "@/lib/utils/format";
 import type { Prompt } from "@/types";
 
-export function PromptCard({ prompt, view = "grid" }: { prompt: Prompt; view?: "grid" | "list" }) {
+export const PromptCard = memo(function PromptCard({ prompt, view = "grid" }: { prompt: Prompt; view?: "grid" | "list" }) {
   if (view === "list") {
     return (
       <Card className="p-4 transition hover:-translate-y-0.5 hover:shadow-md">
@@ -76,4 +77,4 @@ export function PromptCard({ prompt, view = "grid" }: { prompt: Prompt; view?: "
       </Card>
     </div>
   );
-}
+});

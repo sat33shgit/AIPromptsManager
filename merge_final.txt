@@ -1,0 +1,27 @@
+M	.env.example
+M	app/api/prompts/[id]/route.ts
+M	app/api/upload/[key]/route.ts
+D	app/api/upload/presign/route.ts
+M	app/layout.tsx
+M	app/page.tsx
+M	app/share/[token]/page.tsx
+M	components/layout/Footer.tsx
+M	components/layout/Header.tsx
+M	components/prompts/PromptCard.tsx
+M	components/prompts/PromptDetail.tsx
+M	components/prompts/PromptForm.tsx
+D	components/prompts/PromptList.tsx
+D	components/search/SearchResults.tsx
+M	hooks/usePrompts.ts
+M	lib/data/repository.ts
+M	lib/data/sample-data.ts
+M	lib/db/schema.ts
+M	lib/r2/client.ts
+M	lib/utils/search.ts
+M	lib/validations/prompt.ts
+M	next.config.mjs
+M	package-lock.json
+M	package.json
+M	scripts/seed.ts
+Your branch is up to date with 'origin/storage'.
+Switched to branch 'storage'
