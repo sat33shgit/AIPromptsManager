@@ -3,6 +3,11 @@ import { categories, prompts } from "@/lib/db/schema";
 import { sampleCategories, samplePrompts } from "@/lib/data/sample-data";
 
 async function seed() {
+  if (!db) {
+    console.error("Database connection not configured. Skipping seeding.");
+    process.exit(0);
+  }
+
   console.log("Seeding database...");
 
   for (const category of sampleCategories) {
