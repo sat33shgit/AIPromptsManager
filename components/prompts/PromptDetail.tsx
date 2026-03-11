@@ -69,7 +69,7 @@ export function PromptDetail({ prompt, related }: { prompt: Prompt; related: Pro
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {prompt.attachments.map((attachment) => (
-                    <a key={attachment.key} href={attachment.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[var(--accent)]">
+                    <a key={attachment.key} href={`/api/upload/serve?key=${encodeURIComponent(attachment.key)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[var(--accent)]">
                       <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                       {attachment.name}
                     </a>

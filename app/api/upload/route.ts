@@ -13,8 +13,7 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 function buildServeUrl(key: string) {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  return `${base}/api/upload/serve?key=${encodeURIComponent(key)}`;
+  return `/api/upload/serve?key=${encodeURIComponent(key)}`;
 }
 
 export async function POST(request: Request) {

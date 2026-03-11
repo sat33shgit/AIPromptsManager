@@ -341,7 +341,7 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
           <div className="space-y-2">
             {attachments.map((attachment, index) => (
               <div key={attachment.key} className="flex items-center justify-between rounded-xl bg-[var(--surface-elevated)] px-3 py-2 text-sm">
-                <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 truncate text-[var(--accent)]">
+                <a href={`/api/upload/serve?key=${encodeURIComponent(attachment.key)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 truncate text-[var(--accent)]">
                   <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                   {attachment.name}
                 </a>

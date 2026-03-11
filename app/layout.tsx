@@ -19,8 +19,8 @@ const display = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Prompts Manager",
-  description: "AI Prompts Manager for creating, organizing, and sharing prompts."
+  title: "PromptVault",
+  description: "AI prompt manager for creating, organizing, and sharing prompts."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
