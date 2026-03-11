@@ -19,7 +19,7 @@ const display = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "PromptVault",
+  title: "AI Prompts Manager",
   description: "AI prompt manager for creating, organizing, and sharing prompts."
 };
 
