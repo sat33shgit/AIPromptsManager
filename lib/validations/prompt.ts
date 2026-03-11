@@ -9,7 +9,7 @@ const variableSchema = z.object({
 const attachmentSchema = z.object({
   key: z.string().min(1),
   name: z.string().min(1),
-  url: z.string().url(),
+  url: z.string().min(1),
   size: z.number().min(1).max(10 * 1024 * 1024),
   type: z.string().min(1)
 });
