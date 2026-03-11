@@ -28,27 +28,6 @@ export default async function HomePage() {
     <div className="flex gap-8">
       <Sidebar categories={categories} prompts={promptPage.data} />
       <div className="min-w-0 flex-1 space-y-8">
-        <section className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(37,99,235,0.14),rgba(255,255,255,0.74))] p-8 shadow-lg">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-4">
-              <p className="text-sm uppercase tracking-[0.18em] text-[var(--text-secondary)]">AI Prompt Manager</p>
-              <h1 className="max-w-2xl font-display text-5xl leading-tight text-balance">
-                Organize high-value prompts with a design that feels deliberate.
-              </h1>
-              <p className="max-w-2xl text-sm text-[var(--text-secondary)]">
-                Create, search, share, and refine prompts across models, categories, and attachments without turning
-                your workspace into a spreadsheet.
-              </p>
-            </div>
-            <Button asChild size="lg" className="whitespace-nowrap">
-              <Link href="/prompts/new">
-                Start a new prompt
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </section>
-
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {statItems.map((item) => (
             <Card key={item.label}>
