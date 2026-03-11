@@ -65,18 +65,6 @@ export default async function HomePage() {
           ))}
         </section>
 
-        {stats.starredPrompts.length ? (
-          <section className="space-y-4">
-            <div className="flex items-end justify-between">
-              <div>
-                <h2 className="font-display text-3xl">Pinned prompts</h2>
-                <p className="text-sm text-[var(--text-secondary)]">Quick access to high-leverage workflows.</p>
-              </div>
-            </div>
-            <PromptGrid prompts={stats.starredPrompts} />
-          </section>
-        ) : null}
-
         <section className="space-y-4">
           <div className="flex items-end justify-between">
             <div>
