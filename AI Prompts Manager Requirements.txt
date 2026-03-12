@@ -11,18 +11,18 @@
 ----------
 3. Fixes in the cloudflare R2 URL in prod
 4. Rename 'PromptVault' to 'Prompts Manager'
+5. Delete one or more categories
+6. 'Cancel' button in the prompt form
+7. Custom confirmation message for deletion or cancel form
+8. display full list for models
+
+12th March
+----------
+9. Display the attachment count in the card in home page for each prompt
 
 
 
-
-
-
-
-
-1. Manage Categories
-2. The Category list in the new prompt form is not displaying the full list. the new items are not populated in the list. the edit form displays the full list
-3. 
-
+Add readme file
 
 Check all the changes done, cleanup the code, remove debug code, remove unused code or files and optimize the code
 	

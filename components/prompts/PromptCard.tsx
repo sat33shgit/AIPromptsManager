@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Link from "next/link";
-import { Pencil, Share2 } from "lucide-react";
+import { Paperclip, Pencil, Share2 } from "lucide-react";
 
 import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { CopyButton } from "@/components/common/CopyButton";
@@ -26,6 +26,11 @@ export const PromptCard = memo(function PromptCard({ prompt, view = "grid" }: { 
             {prompt.tags.slice(0, 2).map((tag) => (
               <TagBadge key={tag} tag={tag} />
             ))}
+            {prompt.attachments.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                <Paperclip className="h-3 w-3" />{prompt.attachments.length}
+              </span>
+            )}
             <span className="text-xs text-[var(--text-muted)]">{formatRelativeDate(prompt.updatedAt)}</span>
             <span className="text-xs text-[var(--text-muted)]">{formatNumber(prompt.useCount)} uses</span>
           </div>
@@ -70,7 +75,14 @@ export const PromptCard = memo(function PromptCard({ prompt, view = "grid" }: { 
             </div>
             <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]">
               <span>{formatRelativeDate(prompt.updatedAt)}</span>
-              <span>{formatNumber(prompt.useCount)} uses</span>
+              <div className="flex items-center gap-3">
+                {prompt.attachments.length > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Paperclip className="h-3 w-3" />{prompt.attachments.length}
+                  </span>
+                )}
+                <span>{formatNumber(prompt.useCount)} uses</span>
+              </div>
             </div>
           </div>
         </CardContent>

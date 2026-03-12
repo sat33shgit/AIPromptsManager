@@ -65,7 +65,7 @@ export function PromptDetail({ prompt, related }: { prompt: Prompt; related: Pro
             {prompt.attachments.length ? (
               <Card className="bg-[var(--surface-elevated)]">
                 <CardHeader>
-                  <p className="font-semibold">Attachments</p>
+                  <p className="font-semibold">Attachments ({prompt.attachments.length})</p>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {prompt.attachments.map((attachment) => (
