@@ -7,6 +7,12 @@
 ----------
 2. Added Clouflare R2 storage functionality
 
+11th March
+----------
+3. Fixes in the cloudflare R2 URL in prod
+4. Rename 'PromptVault' to 'Prompts Manager'
+
+
 
 
 
@@ -14,7 +20,7 @@
 
 
 1. Manage Categories
-2. Rename 'PromptVault' to 'Prompts Manager'
+2. The Category list in the new prompt form is not displaying the full list. the new items are not populated in the list. the edit form displays the full list
 3. 
 
 

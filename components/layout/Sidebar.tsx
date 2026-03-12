@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Clock3, Star } from "lucide-react";
 
 import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { SidebarCategories } from "@/components/layout/SidebarCategories";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Category, Prompt } from "@/types";
 
@@ -27,21 +28,7 @@ export function Sidebar({ categories, prompts }: { categories: Category[]; promp
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <p className="text-sm font-semibold">Categories</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {categories.map((category) => (
-              <Link key={category.id} href={`/prompts?category=${encodeURIComponent(category.name)}`} className="flex items-center justify-between">
-                <CategoryBadge name={category.name} color={category.color} />
-                <span className="text-xs text-[var(--text-muted)]">
-                  {prompts.filter((prompt) => prompt.category === category.name).length}
-                </span>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+        <SidebarCategories categories={categories} prompts={prompts} />
 
         <Card>
           <CardHeader>
