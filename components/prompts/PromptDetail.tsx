@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Globe, Lock } from "lucide-react";
 
 import { AttachmentListCard } from "@/components/common/AttachmentListCard";
 import { CategoryBadge } from "@/components/common/CategoryBadge";
@@ -6,6 +7,7 @@ import { CopyButton } from "@/components/common/CopyButton";
 import { TagBadge } from "@/components/common/TagBadge";
 import { DeleteConfirmDialog } from "@/components/modals/DeleteConfirmDialog";
 import { ShareModal } from "@/components/modals/ShareModal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatDate, formatNumber } from "@/lib/utils/format";
@@ -18,6 +20,10 @@ export function PromptDetail({ prompt, related }: { prompt: Prompt; related: Pro
         <CardHeader className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <CategoryBadge name={prompt.category} />
+            <Badge className="gap-1">
+              {prompt.isPublic ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+              {prompt.isPublic ? "Public" : "Private"}
+            </Badge>
             {prompt.tags.map((tag) => (
               <TagBadge key={tag} tag={tag} />
             ))}
