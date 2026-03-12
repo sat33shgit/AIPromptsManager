@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, arrayContains, asc, count, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { categories as categoriesTable, prompts as promptsTable } from "@/lib/db/schema";
@@ -144,6 +144,9 @@ export async function listPrompts(filters: PromptFilters = {}): Promise<Paginate
     }
     if (filters.model) {
       conditions.push(eq(promptsTable.model, filters.model));
+    }
+    if (filters.tags?.length) {
+      conditions.push(arrayContains(promptsTable.tags, filters.tags));
     }
     if (filters.q) {
       // Use ilike for basic text search on title and description

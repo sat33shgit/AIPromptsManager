@@ -67,8 +67,8 @@ export function SidebarCategories({ categories, prompts }: { categories: Categor
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-4">
-        <p className="text-sm font-semibold m-0">Categories</p>
-        <div className="flex items-center gap-1">
+          <p className="text-sm font-semibold m-0">Categories</p>
+          <div className="flex items-center gap-1">
           {isEditMode ? (
             <>
               {selectedIds.length > 0 && (

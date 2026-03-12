@@ -40,6 +40,8 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
   const storageKey = prompt ? `prompts-manager-edit-${prompt.id}` : "prompts-manager-draft-new";
 
   const defaultValues = useMemo<FormValues>(
@@ -67,6 +69,7 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
   const attachments = form.watch("attachments");
   const content = form.watch("content");
   const selectedCategory = form.watch("category");
+  const selectedModel = form.watch("model");
   const knownCategories = useMemo(
     () => [...new Set(categories.map((category) => category.name).filter(Boolean))].sort((left, right) => left.localeCompare(right)),
     [categories]
@@ -131,6 +134,23 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
     }
   }, [prompt, router, storageKey]);
 
+  const handleDiscard = async () => {
+    setIsDiscarding(true);
+    try {
+      const newAttachments = attachments.filter(
+        (att) => !prompt?.attachments?.some((orig) => orig.key === att.key)
+      );
+      await Promise.all(
+        newAttachments.map((att) =>
+          fetch(`/api/upload/${encodeURIComponent(att.key)}`, { method: "DELETE" }).catch(console.error)
+        )
+      );
+    } finally {
+      localStorage.removeItem(storageKey);
+      router.back();
+    }
+  };
+
   const submitForm = useCallback(() => {
     void form.handleSubmit(onSubmit)();
   }, [form, onSubmit]);
@@ -194,7 +214,8 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
   }
 
   return (
-    <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+    <>
+      <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-4xl">{prompt ? "Edit prompt" : "Create prompt"}</h1>
@@ -246,12 +267,23 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
           </div>
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
-            <Input id="model" list="models" {...form.register("model")} />
-            <datalist id="models">
-              {models.map((model) => (
-                <option key={model} value={model} />
+            <select
+              id="model"
+              className={cn(
+                "focus-ring h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm"
+              )}
+              {...form.register("model")}
+            >
+              <option value="">Select a model</option>
+              {models.map((modelName) => (
+                <option key={modelName} value={modelName}>
+                  {modelName}
+                </option>
               ))}
-            </datalist>
+              {selectedModel && !models.includes(selectedModel) ? (
+                <option value={selectedModel}>{selectedModel}</option>
+              ) : null}
+            </select>
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="tags">Tags</Label>
@@ -383,12 +415,56 @@ export function PromptForm({ prompt, categories }: { prompt?: Prompt | null; cat
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-4 z-20 flex justify-end">
-        <Button type="submit" disabled={saving} size="lg" className="shadow-lg">
+      <div className="sticky bottom-4 z-20 flex justify-end gap-3">
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="lg" 
+          disabled={saving || isDiscarding}
+          onClick={() => {
+            if (dirty) {
+              setShowCancelConfirm(true);
+            } else {
+              void handleDiscard();
+            }
+          }}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={saving || isDiscarding} size="lg" className="shadow-lg">
           {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? "Saving..." : "Save prompt"}
         </Button>
       </div>
     </form>
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-sm shadow-lg">
+            <CardHeader>
+              <p className="text-lg font-semibold">Discard changes?</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-[var(--text-secondary)]">
+                You have unsaved changes. Are you sure you want to discard them?
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" disabled={isDiscarding} onClick={() => setShowCancelConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="button"
+                  variant="destructive" 
+                  disabled={isDiscarding}
+                  onClick={() => void handleDiscard()}
+                >
+                  {isDiscarding ? "Discarding..." : "Discard"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </>
   );
 }
