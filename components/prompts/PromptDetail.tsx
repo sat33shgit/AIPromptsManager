@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 
+import { AttachmentListCard } from "@/components/common/AttachmentListCard";
 import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { CopyButton } from "@/components/common/CopyButton";
 import { TagBadge } from "@/components/common/TagBadge";
@@ -29,7 +29,7 @@ export function PromptDetail({ prompt, related }: { prompt: Prompt; related: Pro
             </div>
             <div className="flex flex-wrap gap-2">
               <CopyButton promptId={prompt.id} content={prompt.content} />
-              <ShareModal token={prompt.shareToken} />
+              <ShareModal token={prompt.shareToken} isPublic={prompt.isPublic} promptId={prompt.id} />
               <Button asChild variant="outline" size="sm">
                 <Link href={`/prompts/${prompt.id}/edit`}>Edit</Link>
               </Button>
@@ -62,21 +62,7 @@ export function PromptDetail({ prompt, related }: { prompt: Prompt; related: Pro
                 </div>
               </CardContent>
             </Card>
-            {prompt.attachments.length ? (
-              <Card className="bg-[var(--surface-elevated)]">
-                <CardHeader>
-                  <p className="font-semibold">Attachments ({prompt.attachments.length})</p>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {prompt.attachments.map((attachment) => (
-                    <a key={attachment.key} href={`/api/upload/serve?key=${encodeURIComponent(attachment.key)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[var(--accent)]">
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                      {attachment.name}
-                    </a>
-                  ))}
-                </CardContent>
-              </Card>
-            ) : null}
+            <AttachmentListCard attachments={prompt.attachments} />
           </div>
         </CardContent>
       </Card>

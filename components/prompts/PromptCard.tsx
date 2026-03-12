@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Link from "next/link";
-import { Paperclip, Pencil, Share2 } from "lucide-react";
+import { Globe, Lock, Paperclip, Pencil } from "lucide-react";
 
 import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { CopyButton } from "@/components/common/CopyButton";
@@ -65,7 +65,7 @@ export const PromptCard = memo(function PromptCard({ prompt, view = "grid" }: { 
             <div className="flex flex-wrap items-center gap-2">
               <CopyButton promptId={prompt.id} content={prompt.content} />
               <Badge className="gap-1">
-                <Share2 className="h-3 w-3" />
+                {prompt.isPublic ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                 {prompt.isPublic ? "Public" : "Private"}
               </Badge>
               <Link href={`/prompts/${prompt.id}/edit`} className="inline-flex items-center gap-1 text-sm text-[var(--text-secondary)]">
