@@ -3,15 +3,22 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Check, Copy, Share2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function ShareModal({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const url = `${baseUrl}/share/${token}`;
+  const [baseUrl, setBaseUrl] = useState(process.env.NEXT_PUBLIC_APP_URL ?? "");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
+
+  const url = baseUrl ? new URL(`/share/${token}`, baseUrl).toString() : `/share/${token}`;
 
   async function copyUrl() {
     await navigator.clipboard.writeText(url);
